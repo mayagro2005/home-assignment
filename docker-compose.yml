@@ -1,0 +1,44 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: my-rabbit
+    ports:
+      - "5672:5672"    # AMQP messaging
+      - "15672:15672"  # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    container_name: consumer
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  publisher:
+    build:
+      context: .
+      dockerfile: Dockerfile.publisher
+    container_name: publisher
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  cpu_monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    container_name: cpu_monitor
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
