@@ -17,6 +17,8 @@ channel = connection.channel()
 # 1. Durable queue
 channel.queue_declare(queue='ABC', durable=True)
 
+# Send the required 10 messages
+print("Sending 10 required messages...")
 for i in range(10):
     message = f"Message number {i}"
 
@@ -33,4 +35,23 @@ for i in range(10):
     print("Sent:", message)
     time.sleep(1)
 
-connection.close()
+# BONUS: Keep publisher running for interactive messages
+print("\n--- Bonus: Interactive Mode ---")
+print("Type additional messages to send (Ctrl+C to exit):")
+
+try:
+    while True:
+        message = input("> ")
+        if message.strip():  # Only send non-empty messages
+            channel.basic_publish(
+                exchange='',
+                routing_key='ABC',
+                body=message,
+                properties=pika.BasicProperties(
+                    delivery_mode=2
+                )
+            )
+            print("Sent:", message)
+except KeyboardInterrupt:
+    print("\nClosing publisher...")
+    connection.close()
