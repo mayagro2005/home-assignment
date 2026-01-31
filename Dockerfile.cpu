@@ -1,8 +1,8 @@
 FROM python:3.13-slim
 
 WORKDIR /app
-COPY cpu_monitor.py .
+COPY system_monitor.py .
 
 RUN pip install psutil
 
-CMD ["python", "cpu_monitor.py"]
+CMD ["python", "system_monitor.py"]

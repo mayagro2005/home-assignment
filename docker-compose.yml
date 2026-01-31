@@ -42,10 +42,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.cpu
-    container_name: cpu_monitor
+    container_name: system_monitor
+    volumes:
+      - ./logs:/logs
     depends_on:
       rabbitmq:
         condition: service_healthy
+
 
 volumes:
   rabbitmq_data:
