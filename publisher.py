@@ -5,7 +5,10 @@ import time
 while True:
     try:
         connection = pika.BlockingConnection(
-            pika.ConnectionParameters('rabbitmq')
+            pika.ConnectionParameters(
+                'rabbitmq',
+                heartbeat=600  # <-- Added heartbeat to prevent timeout during interactive mode
+            )
         )
         break
     except pika.exceptions.AMQPConnectionError:
