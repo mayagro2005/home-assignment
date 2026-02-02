@@ -126,11 +126,10 @@ The `system_monitor.py` service continuously monitors system-wide **CPU, memory,
 THRESHOLD = 80              # Alert if CPU > 80%
 CHECK_INTERVAL = 5          # Check every 5 seconds
 ALERT_COOLDOWN = 300        # Wait 5 min before next alert
-SEND_EMAIL_ALERTS = ...     # Enable/disable email
 ```
 These are the **settings** you can customize.
 
-**2. LOGGING Section (Lines 24-33)**
+** LOGGING Section **
 ```python
 logging.basicConfig(
     handlers=[
@@ -143,25 +142,7 @@ This sets up **two-way logging**:
 - ✅ Logs appear in console (real-time)
 - ✅ Logs saved to `system_monitor.log` (permanent record)
 
-**3. EMAIL ALERT Function (Lines 44-79)**
-```python
-def send_email_alert(cpu_usage, memory_usage, top_processes):
-    # Checks if email is enabled
-    if not SEND_EMAIL_ALERTS:
-        return False
-    
-    # Composes email with metrics
-    subject = f"HIGH CPU ALERT: {cpu_usage}%"
-    body = f"CPU: {cpu_usage}%, Memory: {memory_usage}%..."
-    
-    # Sends via Gmail SMTP
-    server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-    server.login(EMAIL_FROM, EMAIL_PASSWORD)
-    server.send_message(msg)
-```
-This function **only runs if email alerts are enabled**.
-
-**4. GET TOP PROCESSES Function (Lines 86-105)**
+** GET TOP PROCESSES Function **
 ```python
 def get_top_processes(n=3):
     processes = []
@@ -174,7 +155,7 @@ def get_top_processes(n=3):
 ```
 Gets the **3 apps using the most CPU**.
 
-**5. MAIN LOOP (Lines 107-157)**
+** MAIN LOOP **
 ```python
 while True:
     # Get metrics (every 5 seconds)
@@ -221,10 +202,6 @@ The `system_monitor.py` service continuously monitors system-wide **CPU, memory,
 - Alert counter to track alert history
 - Shows which processes are hogging CPU
 
-✅ **BONUS: Email Alerts** (Optional)
-- Sends email notifications when CPU exceeds threshold
-- Includes detailed metrics and top processes
-- Uses Gmail SMTP (or any SMTP server)
 
 ### Architecture & Implementation
 
@@ -275,34 +252,6 @@ The System Monitor runs automatically in its container and logs everything.
 python system_monitor.py
 ```
 
-**Option 3: With Email Alerts Enabled**
-```bash
-export SEND_EMAIL_ALERTS=true
-export EMAIL_FROM=your-email@gmail.com
-export EMAIL_PASSWORD=your-app-password  # Use App Password for Gmail
-export EMAIL_TO=recipient@gmail.com
-python system_monitor.py
-```
-
-### Email Alert Setup (Gmail)
-
-1. **Enable 2-Factor Authentication** on Gmail
-2. **Create an App Password:**
-   - Go to https://myaccount.google.com/apppasswords
-   - Select "Mail" and "Windows Computer"
-   - Copy the 16-character password
-3. **Set environment variables:**
-   ```bash
-   export EMAIL_FROM=your-email@gmail.com
-   export EMAIL_PASSWORD=xxxx-xxxx-xxxx-xxxx  # 16-char app password
-   export EMAIL_TO=recipient@gmail.com
-   export SEND_EMAIL_ALERTS=true
-   ```
-4. **Run the monitor:**
-   ```bash
-   python system_monitor.py
-   ```
-
 ### Example Output
 
 **Console/Log Output:**
@@ -317,25 +266,6 @@ python system_monitor.py
 2024-01-31 10:15:11,789 - WARNING - 🚨 ALERT #1: CPU usage is 85.6% (threshold: 80%)
 2024-01-31 10:15:11,790 - WARNING -    Top processes: python (28.5%), chrome (15.2%), docker (8.1%)
 2024-01-31 10:15:11,850 - INFO - ✉️ Email alert sent to recipient@gmail.com
-```
-
-**Email Alert Example:**
-```
-Subject: ⚠️ HIGH CPU ALERT: 85.6% usage detected
-
-HIGH CPU USAGE ALERT
-===================
-
-Current Metrics:
-- CPU Usage: 85.6%
-- Memory Usage: 33.5%
-- Threshold: 80%
-- Timestamp: 2024-01-31 10:15:11
-
-Top CPU-consuming processes:
-1. python - 28.5% CPU, 12.1% Memory
-2. chrome - 15.2% CPU, 8.5% Memory
-3. docker - 8.1% CPU, 5.2% Memory
 ```
 
 ### Customization
