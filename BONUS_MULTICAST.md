@@ -6,15 +6,6 @@ Multicast is a communication method where a single sender transmits data to a gr
 
 Unlike unicast (one-to-one) or broadcast (one-to-all), multicast is one-to-many but only to interested participants.
 
-## Typical Use Cases
-
-Common use cases for multicast include:
-- Live video and audio streaming (IPTV)
-- Financial data feeds (stock prices)
-- Online multiplayer games
-- Service discovery protocols
-- Monitoring and alert systems
-
 Multicast is efficient because the sender sends only one copy of the data, and the network distributes it.
 
 ## Moving Multicast Between Networks
