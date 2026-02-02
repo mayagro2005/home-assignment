@@ -121,7 +121,7 @@ The `system_monitor.py` service continuously monitors system-wide **CPU, memory,
 
 ### Code Structure Explained
 
-**1. CONFIGURATION Section (Lines 10-22)**
+** CONFIGURATION Section **
 ```python
 THRESHOLD = 80              # Alert if CPU > 80%
 CHECK_INTERVAL = 5          # Check every 5 seconds
