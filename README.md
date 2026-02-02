@@ -17,54 +17,52 @@ This project implements a simple message queuing system using **RabbitMQ** as th
 
 ### Step 1: Start the system
 
-```bash
 docker-compose up --build
-```
 
 This will:
 1. Start RabbitMQ container
 2. Start the Consumer (waits for messages)
 3. Start the Publisher (sends 10 messages)
-4. Start the CPU Monitor (monitors system CPU)
+4. Start the CPU Monitor (monitors system CPU, memory, and disk)
 
 ### Step 2: View the results
 
-**See consumer receiving messages:**
-```bash
-docker logs consumer
-```
+See consumer receiving messages:
 
-**See publisher sending messages:**
-```bash
+docker logs consumer
+
+See publisher sending messages:
+
 docker logs publisher
-```
 
 ### Step 3: Stop the system
 
-```bash
 docker-compose down
-```
 
 ---
 
 ## Key Features
 
+- Simple RabbitMQ publisher/consumer workflow
+- CPU, Memory, Disk monitoring with alerts
+- Tracks top CPU-consuming processes
+- Real-time logging to console and file
+
 ---
 
 ## Bonus Feature: Interactive Publisher & Live Communication
 
-After sending the required 10 messages, the publisher stays alive and accepts user input for additional messages. You can see real-time communication between publisher and consumer!
+After sending the required 10 messages, the publisher stays alive and accepts user input for additional messages. You can see real-time communication between publisher and consumer.
 
 ### Prerequisites for Interactive Mode
 The publisher container must have `stdin_open: true` and `tty: true` in docker-compose.yml to support interactive input.
 
 ### How to use Live Communication:
 
-**Step 1 - Terminal 1: Start all containers**
-```bash
-docker-compose down   # Stop any previous containers
+Step 1 - Terminal 1: Start all containers
+
+docker-compose down
 docker-compose up --build
-```
 
 You should see output showing:
 - RabbitMQ starting
@@ -72,28 +70,21 @@ You should see output showing:
 - Publisher sending 10 messages
 - Publisher entering interactive mode
 
-**Step 2 - Terminal 2: Attach to publisher to send messages**
-```bash
-docker attach publisher
-```
+Step 2 - Terminal 2: Attach to publisher to send messages
 
-**IMPORTANT:** Only run this after you see the `> ` prompt in Terminal 1. The publisher must be running first.
+docker attach publisher
 
 You can now type messages:
-```
 > Hello from terminal!
 Sent: Hello from terminal!
 > This is a test
 Sent: This is a test
-```
 
-**Step 3 - Terminal 3: View consumer messages in real-time**
-```bash
+Step 3 - Terminal 3: View consumer messages in real-time
+
 docker logs -f consumer
-```
 
 You'll see all messages appear in the consumer as they're sent:
-```
 Waiting for messages...
 Received: Message number 0
 Received: Message number 1
@@ -101,242 +92,116 @@ Received: Message number 1
 Received: Message number 9
 Received: Hello from terminal!
 Received: This is a test
-```
 
-**To exit:**
-- Press `Ctrl+C` in Terminal 2 (publisher) to stop sending messages and close the publisher
-- Press `Ctrl+C` in Terminal 3 (consumer logs) to stop watching logs
-- Press `Ctrl+C` in Terminal 1 to stop all containers
+To exit:
+- Press Ctrl+C in Terminal 2 (publisher) to stop sending messages
+- Press Ctrl+C in Terminal 3 (consumer logs) to stop watching logs
+- Press Ctrl+C in Terminal 1 to stop all containers
 
-**Troubleshooting:**
-- If you get "cannot attach to a stopped container", run `docker-compose up --build` first
-- Make sure you have `stdin_open: true` and `tty: true` in the publisher section of docker-compose.yml
+Troubleshooting:
+- If you get "cannot attach to a stopped container", run docker-compose up --build first
+- Make sure you have stdin_open: true and tty: true in the publisher section of docker-compose.yml
 
 ---
 
 ## System Monitoring Service - Detailed Explanation
 
 ### Overview
-The `system_monitor.py` service continuously monitors system-wide **CPU, memory, and disk** usage. It sends alerts when CPU usage exceeds 80%.
+The system_monitor.py service continuously monitors system-wide CPU, memory, and disk usage. It logs warnings when CPU usage exceeds 80%.
 
 ### Code Structure Explained
 
-** CONFIGURATION Section **
-```python
+CONFIGURATION Section
+
 THRESHOLD = 80              # Alert if CPU > 80%
 CHECK_INTERVAL = 5          # Check every 5 seconds
 ALERT_COOLDOWN = 300        # Wait 5 min before next alert
-```
-These are the **settings** you can customize.
 
-** LOGGING Section **
-```python
-logging.basicConfig(
-    handlers=[
-        logging.FileHandler('system_monitor.log'),  # Saves to file
-        logging.StreamHandler()                     # Prints to console
-    ]
-)
-```
-This sets up **two-way logging**:
-- ✅ Logs appear in console (real-time)
-- ✅ Logs saved to `system_monitor.log` (permanent record)
+LOGGING Section
 
-** GET TOP PROCESSES Function **
-```python
-def get_top_processes(n=3):
-    processes = []
-    for proc in psutil.process_iter([...]):
-        # Collects all running processes
-        processes.append({...})
-    
-    # Sort and return top 3
-    return sorted(processes, ...)[:3]
-```
-Gets the **3 apps using the most CPU**.
+Logs appear in console (real-time) and are saved to system_monitor.log
 
-** MAIN LOOP **
-```python
-while True:
-    # Get metrics (every 5 seconds)
-    cpu_usage = psutil.cpu_percent()      # Get current CPU %
-    memory_usage = psutil.virtual_memory().percent   # Get Memory %
-    disk_usage = psutil.disk_usage('/').percent      # Get Disk %
-    
-    # Log them
-    logger.info(f"CPU: {cpu_usage}% | Memory: {memory_usage}% | Disk: {disk_usage}%")
-    
-    # If CPU > 80%, check cooldown and send alert
-    if cpu_usage > THRESHOLD:
-        if time_since_last_alert > 5_minutes:
-            logger.warning(f"ALERT! CPU is {cpu_usage}%")
-            send_email_alert(...)
-    
-    time.sleep(5)  # Wait 5 seconds before next check
-```
-This is the **heart** of the monitor:
-1. Grabs 3 metrics
-2. Logs them
-3. If CPU is high + enough time passed, sends alert
-4. Repeats every 5 seconds
+GET TOP PROCESSES Function
+
+Gets the 3 apps using the most CPU.
+
+MAIN LOOP
+
+- Grabs CPU, memory, disk every CHECK_INTERVAL seconds
+- Logs the metrics
+- If CPU > THRESHOLD and cooldown passed:
+  - Logs a warning
+  - Shows top CPU-consuming processes
+- Repeats indefinitely
 
 ---
 
-### Overview
-The `system_monitor.py` service continuously monitors system-wide **CPU, memory, and disk** usage. It sends alerts when CPU usage exceeds 80%.
-
 ### Features
 
-✅ **Real-time Monitoring**
+Real-time Monitoring
 - Checks CPU, Memory, and Disk every 5 seconds
 - Identifies top 3 processes consuming CPU
 - Tracks all system metrics in one place
 
-✅ **Advanced Logging**
+Advanced Logging
 - Structured logs with timestamps
-- File logging (`system_monitor.log`) + console output
+- File logging (system_monitor.log) + console output
 - Different severity levels (INFO, WARNING, ERROR)
 
-✅ **Smart Alerts**
+Smart Alerts
 - Alert cooldown (5 minutes) to prevent alert spam
 - Alert counter to track alert history
 - Shows which processes are hogging CPU
 
-
-### Architecture & Implementation
-
-**How it works:**
-```
-1. Start monitoring loop
-2. Every 5 seconds:
-   - Get current CPU/Memory/Disk usage (SYSTEM-WIDE)
-   - Get top 3 processes by CPU usage
-   - Log all metrics
-   - If CPU > 80%:
-     - Check if enough time has passed since last alert (cooldown)
-     - If yes: Send alert (logging + optional email)
-     - If no: Skip this alert (prevent spam)
-3. Repeat
-```
-
-**What it monitors (System-wide):**
-
-| Metric | What it means | Example |
-|--------|---------------|---------|
-| CPU | Total processor usage across all apps | 45% - all processes combined |
-| Memory | Total RAM in use | 32% - across all running apps |
-| Disk | Total storage in use | 60% - entire system disk |
-| Top Processes | Individual apps using most CPU | Python (15%), RabbitMQ (8%), etc. |
-
-**Key Components:**
-
-| Component | Purpose |
-|-----------|---------|
-| `psutil` | Gets system-wide and process metrics |
-| `logging` | Structured logging to file and console |
-| `smtplib` | Sends email alerts (optional) |
-| `cooldown` | Prevents alert spam (5 min between alerts) |
-| `top_processes` | Shows which apps are using CPU |
+---
 
 ### Running the System Monitor
 
-**Option 1: Via Docker Compose (included)**
-```bash
+Option 1: Via Docker Compose (included)
+
 docker-compose up
-```
 
-The System Monitor runs automatically in its container and logs everything.
+Option 2: Standalone (on your machine)
 
-**Option 2: Standalone (on your machine)**
-```bash
 python system_monitor.py
-```
 
-### Example Output
+---
 
-**Console/Log Output:**
-```
-2024-01-31 10:15:00,123 - INFO - ============================================================
-2024-01-31 10:15:00,124 - INFO - System Monitor Service Started
-2024-01-31 10:15:00,124 - INFO - Monitoring: CPU, Memory, Disk
-2024-01-31 10:15:00,124 - INFO - CPU Threshold: 80%
-2024-01-31 10:15:00,125 - INFO - ============================================================
-2024-01-31 10:15:01,234 - INFO - 📊 CPU:  45.2% | Memory:  32.1% | Disk:  60.5%
-2024-01-31 10:15:06,456 - INFO - 📊 CPU:  52.3% | Memory:  33.5% | Disk:  60.5%
-2024-01-31 10:15:11,789 - WARNING - 🚨 ALERT #1: CPU usage is 85.6% (threshold: 80%)
-2024-01-31 10:15:11,790 - WARNING -    Top processes: python (28.5%), chrome (15.2%), docker (8.1%)
-2024-01-31 10:15:11,850 - INFO - ✉️ Email alert sent to recipient@gmail.com
-```
+### Example Log Output
 
-### Customization
+Normal operation:
+2024-01-31 10:15:01 - INFO - CPU:  45.2% | Memory:  32.1% | Disk:  60.5%
+2024-01-31 10:15:06 - INFO - CPU:  52.3% | Memory:  33.5% | Disk:  60.5%
 
-Edit `system_monitor.py` to change:
-- **THRESHOLD**: CPU alert level (currently 80%)
-- **CHECK_INTERVAL**: How often to check (currently 5 seconds)
-- **ALERT_COOLDOWN**: Minimum time between alerts (currently 5 minutes)
+High CPU detected:
+2024-01-31 10:15:11 - WARNING - ALERT #1 CPU 85.6%
+2024-01-31 10:15:11 - WARNING - Top processes:
+ - python (28.5%)
+ - chrome (15.2%)
+ - docker (8.1%)
 
-### How to View and Understand Logs
+After cooldown period:
+2024-01-31 10:20:15 - WARNING - ALERT #2 CPU 82.1%
+2024-01-31 10:20:15 - WARNING - Top processes:
+ - docker (18.5%)
+ - python (12.3%)
+ - node (5.1%)
 
-**Option 1: View logs in real-time from Docker**
-```bash
-docker logs -f system_monitor
-```
-The `-f` means "follow" - shows new logs as they appear.
-
-**Option 2: View saved log file**
-```bash
-# If running locally
-tail -f system_monitor.log
-
-# If in Docker, copy the log out
-docker cp system_monitor:/app/system_monitor.log .
-cat system_monitor.log
-```
-
-**Option 3: View only warnings/alerts**
-```bash
-docker logs system_monitor | grep "ALERT\|WARNING"
-```
-
-### Understanding the Log Output
-
-**Normal operation:**
-```
-2024-01-31 10:15:01 - INFO - 📊 CPU:  45.2% | Memory:  32.1% | Disk:  60.5%
-2024-01-31 10:15:06 - INFO - 📊 CPU:  52.3% | Memory:  33.5% | Disk:  60.5%
-```
-✅ Everything normal, metrics logged every 5 seconds
-
-**High CPU detected:**
-```
-2024-01-31 10:15:11 - WARNING - 🚨 ALERT #1: CPU usage is 85.6% (threshold: 80%)
-2024-01-31 10:15:11 - WARNING -    Top processes: python (28.5%), chrome (15.2%), docker (8.1%)
-2024-01-31 10:15:12 - INFO - ✉️ Email alert sent to recipient@gmail.com
-```
-⚠️ CPU exceeded threshold, alert sent (if email enabled)
-
-**After 5 minutes:**
-```
-2024-01-31 10:20:15 - WARNING - 🚨 ALERT #2: CPU usage is 82.1% (threshold: 80%)
-2024-01-31 10:20:15 - WARNING -    Top processes: docker (18.5%), python (12.3%), node (5.1%)
-2024-01-31 10:20:16 - INFO - ✉️ Email alert sent to recipient@gmail.com
-```
-✅ Another alert sent (only after 5-minute cooldown passed)
+---
 
 ### Log File
 
-Logs are saved to `system_monitor.log` with full details:
-```bash
+Logs are saved to system_monitor.log with full details:
+
 tail -f system_monitor.log  # Watch logs in real-time
-```
 
 ---
 
 ## Project Structure
 
-- `publisher.py` - Sends 10 messages to "ABC" queue + bonus interactive mode
-- `consumer.py` - Listens to "ABC" queue and prints messages
-- `system_monitor.py` - Monitors CPU/Memory/Disk usage with advanced logging and email alerts
-- `docker-compose.yml` - Orchestrates all services
-- `Dockerfile.publisher`, `Dockerfile.consumer`, `Dockerfile.cpu` - Container configurations
-- `system_monitor.log` - Generated log file from system monitor
+- publisher.py - Sends 10 messages to "ABC" queue + bonus interactive mode
+- consumer.py - Listens to "ABC" queue and prints messages
+- system_monitor.py - Monitors CPU/Memory/Disk usage with advanced logging
+- docker-compose.yml - Orchestrates all services
+- Dockerfile.publisher, Dockerfile.consumer, Dockerfile.cpu - Container configurations
+- system_monitor.log - Generated log file from system monitor
